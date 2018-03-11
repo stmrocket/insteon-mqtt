@@ -95,6 +95,9 @@ class Protocol:
         #    - add __eq__ check to messages (or to store bytes?)
         #    - if no handler, arrival time near time tag, and same msg, ignore
 
+        # Link to Modem Object
+        self.modem = None
+
     #-----------------------------------------------------------------------
     def add_handler(self, handler):
         """Add a universal message handler.
@@ -274,6 +277,9 @@ class Protocol:
         Args:
           msg:   Insteon message object to process.
         """
+        # Notify the device of the message
+        self._notify_device(msg)
+
         # If we have a write handler, then most likely the inbound
         # message is a reply to the write so see if it can handle the
         # message.  If the status is FINISHED, then the handler has
@@ -316,6 +322,20 @@ class Protocol:
         # skip the whole message.
         LOG.warning("No read handler found for message type %#04x: %s",
                     msg.msg_code, msg)
+
+    #-----------------------------------------------------------------------
+    def _notify_device(self, msg):
+        """Sends an incomming directly to the device object for processing
+
+        Currently this is only used for hop distance tracking but it could be
+        used to extract other information needed by the device.
+        Args:
+          msg:   Insteon message object to process.
+        """
+        if isinstance(msg, (Msg.InpStandard, Msg.InpExtended)):
+            device = self.modem.find(msg.from_addr)
+            if device:
+                device.msg_arrived(msg)
 
     #-----------------------------------------------------------------------
     def _write_finished(self):

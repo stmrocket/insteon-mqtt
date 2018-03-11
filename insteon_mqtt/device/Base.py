@@ -4,6 +4,7 @@
 #
 #===========================================================================
 import json
+import math
 import os.path
 from ..Address import Address
 from ..CommandSeq import CommandSeq
@@ -107,6 +108,14 @@ class Base:
         # refresh message out and getting the response - not by
         # downloading the database.
         self._next_db_delta = None
+
+        # Hop distance tracking array.  Stores 10 values and the average,
+        # rounded up is used as the max_hops value when sending a message to
+        # this device
+        # It is probably better to save this value or at least the calculated
+        # average value in the db json file so that on restart, the device has
+        # the proper hop distance calculated.
+        self._hop_distance = []
 
     #-----------------------------------------------------------------------
     def type(self):
@@ -415,6 +424,56 @@ class Base:
         except:
             LOG.exception("Invalid command inputs to device %s'.  Input cmd "
                           "%s with args: %s", self.label, cmd, str(kwargs))
+
+    #-----------------------------------------------------------------------
+    def msg_arrived(self, msg):
+        """Receives incomming message notifications from protocol
+
+        Do not use this to handle messages.  This function is for use in
+        extracting broad information about the receipt of a message.  At the
+        moment it is used for tracking the hop distance from the modem.
+
+        This could also potentially be used to take queued actions when a
+        battery device sends a message.
+
+        Args:
+          msg:  (message.InpStandard, message.InpExtended) The message that
+          arrived.
+        """
+        self._update_hop_distance(msg)
+
+    #-----------------------------------------------------------------------
+    def _update_hop_distance(self, msg):
+        """Extracts and stores the distance to the device from a message
+
+        Extracts the hop value and adds it to the hop_distance array, pops
+        values off of the array if it is larger than 10.
+
+        Args:
+          msg:  (message.InpStandard, message.InpExtended) The message that
+          arrived.
+        """
+        self._hop_distance.append(msg.flags.max_hops - msg.flags.hops_left)
+        array_length = len(self._hop_distance)
+        if array_length > 10:
+            del self._hop_distance[10 - array_length:]
+
+    #-----------------------------------------------------------------------
+    def hop_distance(self):
+        """Extracts and stores the distance to the device from a message
+
+        Extracts the hop value and adds it to the hop_distance array, pops
+        values off of the array if it is larger than 10.
+
+        Returns:
+          (int) The hop distance from 0 to 3
+        """
+        average = 3  # Default to 3 hops if we have no data
+        if len(self._hop_distance) > 0:
+            average = sum(self._hop_distance) / float(len(self._hop_distance))
+            average = math.ceil(average)
+            average = 3 if average > 3 else average
+        return average
 
     #-----------------------------------------------------------------------
     def handle_refresh(self, msg):
