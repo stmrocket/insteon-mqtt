@@ -6,6 +6,7 @@
 import time
 from .. import log
 from .. import util
+from .. import message
 
 LOG = log.get_logger()
 
@@ -116,6 +117,10 @@ class Base:
 
         # Otherwise we should try and resend the message with ourselves as
         # the handler again so we don't lose the count.
+        if (isinstance(self._msg, (message.OutStandard, message.OutExtended))):
+            # increase max hops for this message
+            if self._msg.flags.max_hops < 3:
+                self._msg.flags.max_hops += 1
         protocol.send(self._msg, self)
 
         # Tell the protocol that we're expired.  This will end this handler
