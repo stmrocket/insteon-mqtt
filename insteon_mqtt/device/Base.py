@@ -83,7 +83,7 @@ class Base:
             self.label += " (%s)" % self.name
 
         self.save_path = modem.save_path
-        self.db = db.Device(self.addr)
+        self.db = db.Device(self)
         self.load_db()
 
         # Remove (mqtt) commands mapped to methods calls.  These are
@@ -155,7 +155,7 @@ class Base:
             with open(path) as f:
                 data = json.load(f)
 
-            self.db = db.Device.from_json(data, path)
+            self.db = db.Device.from_json(self, data, path)
         except:
             LOG.exception("Error reading file %s", path)
             return

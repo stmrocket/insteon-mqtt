@@ -39,12 +39,13 @@ class Device:
     """
 
     @staticmethod
-    def from_json(data, path):
+    def from_json(device, data, path):
         """Read a Device database from a JSON input.
 
         The inverse of this is to_json().
 
         Args:
+          device: (Device) The Insteon device object.
           data:   (dict) The data to read from.
           path:   (str) The file to save the database to when changes are
                   made.
@@ -53,7 +54,7 @@ class Device:
           Device: Returns the created Device object.
         """
         # Create the basic database object.
-        obj = Device(Address(data['address']), path)
+        obj = Device(device, path)
 
         for d in data['used']:
             obj.add_entry(DeviceEntry.from_json(d), save=False)
@@ -76,16 +77,16 @@ class Device:
         return obj
 
     #-----------------------------------------------------------------------
-    def __init__(self, addr, path=None):
+    def __init__(self, device, path=None):
         """Constructor
 
         Args:
-          addr:  (Address) The Insteon address of the device the database
-                 is for.
+          device:(Device) The Insteon device the database is for.
           path:  (str) The file to save the database to when changes are
                  made.
         """
-        self.addr = addr
+        self.device = device
+        self.addr = device.addr
         self.save_path = path
 
         # All link delta number.  This is incremented by the device when the

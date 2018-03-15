@@ -10,7 +10,10 @@ import insteon_mqtt.message as Msg
 class Test_Device:
     #-----------------------------------------------------------------------
     def test_basic(self):
-        obj = IM.db.Device(IM.Address(0x01, 0x02, 0x03))
+        addr = IM.Address(0x01, 0x02, 0x03)
+        modem = MockModem()
+        device = IM.device.Base(None, modem, addr, "foo")
+        obj = IM.db.Device(device)
         assert len(obj) == 0
 
         assert obj.is_current(0) is False
@@ -97,7 +100,7 @@ class Test_Device:
         str(obj)
 
         j = obj.to_json()
-        obj2 = IM.db.Device.from_json(j, '')
+        obj2 = IM.db.Device.from_json(device, j, '')
         assert len(obj2.entries) == 4
         assert len(obj2.unused) == 1
         assert len(obj2.groups) == 2
@@ -107,3 +110,7 @@ class Test_Device:
         assert len(obj2.entries) == 0
         assert len(obj2.unused) == 0
         assert len(obj2.groups) == 0
+
+class MockModem():
+    def __init__(self):
+        self.save_path = ''
