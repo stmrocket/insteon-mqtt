@@ -181,7 +181,8 @@ class Base:
         # This sends a linking mode command to the device.  As far as I can
         # see, there is no way to cancel it.
         msg = Msg.OutExtended.direct(self.addr, 0x09, group,
-                                     bytes([0x00] * 14))
+                                     bytes([0x00] * 14),
+                                     max_hops=self.hop_distance())
         msg_handler = handler.StandardCmd(msg, self.handle_linking, on_done)
         self.protocol.send(msg, msg_handler)
 
@@ -228,7 +229,8 @@ class Base:
         # database delta field.  The handler checks that against the
         # current value.  If it's different, it will send a database
         # download command to the device to update the database.
-        msg = Msg.OutStandard.direct(self.addr, 0x19, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, 0x19, 0x00,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.DeviceRefresh(self, self.handle_refresh, force,
                                             on_done, num_retry=3)
         self.protocol.send(msg, msg_handler)
@@ -243,7 +245,8 @@ class Base:
         # database delta field.  The handler checks that against the
         # current value.  If it's different, it will send a database
         # download command to the device to update the database.
-        msg = Msg.OutStandard.direct(self.addr, 0x1f, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, 0x1f, 0x00,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.StandardCmd(msg, self.handle_flags, on_done)
         self.protocol.send(msg, msg_handler)
 
@@ -258,7 +261,8 @@ class Base:
         LOG.info("Device %s cmd: get engine version", self.label)
 
         # Send the get_engine_version request.
-        msg = Msg.OutStandard.direct(self.addr, 0x0D, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, 0x0D, 0x00,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.StandardCmd(msg, self.handle_engine, on_done)
         self.protocol.send(msg, msg_handler)
 

@@ -151,7 +151,8 @@ class Switch(Base):
 
         # Send an on or instant on command.
         cmd1 = 0x11 if not instant else 0x21
-        msg = Msg.OutStandard.direct(self.addr, cmd1, 0xff)
+        msg = Msg.OutStandard.direct(self.addr, cmd1, 0xff,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
@@ -178,7 +179,8 @@ class Switch(Base):
         # Send an off or instant off command.  Instant off is the same
         # command as instant on, just with the level set to 0x00.
         cmd1 = 0x13 if not instant else 0x21
-        msg = Msg.OutStandard.direct(self.addr, cmd1, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, cmd1, 0x00,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
@@ -223,7 +225,8 @@ class Switch(Base):
             0x00,   # D5 = cmd2 to send
             0x00,   # D6 = use ramp rate in scene db
             ] + [0x00] * 8)
-        msg = Msg.OutExtended.direct(self.addr, 0x30, 0x00, data)
+        msg = Msg.OutExtended.direct(self.addr, 0x30, 0x00, data,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
@@ -262,7 +265,8 @@ class Switch(Base):
             level,  # D3 brightness level
             ] + [0x00] * 11)
 
-        msg = Msg.OutExtended.direct(self.addr, 0x2e, 0x00, data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2e, 0x00, data,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.

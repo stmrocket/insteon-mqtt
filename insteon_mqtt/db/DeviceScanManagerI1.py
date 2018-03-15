@@ -76,7 +76,8 @@ class DeviceScanManagerI1:
           msb:  The most significant bit value
         """
         self.msb = msb
-        db_msg = Msg.OutStandard.direct(self.db.addr, 0x28, self.msb)
+        db_msg = Msg.OutStandard.direct(self.db.addr, 0x28, self.msb,
+                                        max_hops=self.db.device.hop_distance())
         msg_handler = handler.StandardCmd(db_msg, self.handle_set_msb,
                                           on_done=self.on_done,
                                           num_retry=self._num_retry)
@@ -100,7 +101,8 @@ class DeviceScanManagerI1:
             LOG.info("%s device ACK Set MSB: %02x", msg.from_addr,
                      self.msb)
             db_msg = Msg.OutStandard.direct(self.db.addr, 0x2B,
-                                            self.lsb)
+                                            self.lsb,
+                                            max_hops=self.db.device.hop_distance())
             msg_handler = handler.StandardCmd(db_msg,
                                               self.handle_get_lsb,
                                               on_done=self.on_done,
@@ -166,7 +168,8 @@ class DeviceScanManagerI1:
         else:
             # Request the next LSB
             db_msg = Msg.OutStandard.direct(self.db.addr, 0x2B,
-                                            self.lsb)
+                                            self.lsb,
+                                            max_hops=self.db.device.hop_distance())
             msg_handler = handler.StandardCmd(db_msg,
                                               self.handle_get_lsb,
                                               on_done=self.on_done,

@@ -64,18 +64,20 @@ class OutStandard(Base):
 
     #-----------------------------------------------------------------------
     @classmethod
-    def direct(cls, to_addr, cmd1, cmd2):
+    def direct(cls, to_addr, cmd1, cmd2, max_hops=3):
         """Construct a direct, standard message
 
         Args:
           to_addr:  (Address) The adddress to send the commadn to.
           cmd1:     (int) The command 1 field to set.
           cmd2:     (int) The command 2 field to set.
+          max_hops: (int) The maximum number of hops for this message this is
+                    best set using the device hop_distance value
 
         Returns:
           Returns the created OutStandard message.
         """
-        flags = Flags(Flags.Type.DIRECT, is_ext=False)
+        flags = Flags(Flags.Type.DIRECT, is_ext=False, max_hops=max_hops)
         return OutStandard(to_addr, flags, cmd1, cmd2)
 
     #-----------------------------------------------------------------------
@@ -169,7 +171,7 @@ class OutExtended(OutStandard):
     #-----------------------------------------------------------------------
     # pylint: disable=arguments-differ
     @classmethod
-    def direct(cls, to_addr, cmd1, cmd2, data):
+    def direct(cls, to_addr, cmd1, cmd2, data, max_hops=3):
         """Construct a direct, extended message
 
         Args:
@@ -177,11 +179,13 @@ class OutExtended(OutStandard):
           cmd1:     (int) The command 1 field to set.
           cmd2:     (int) The command 2 field to set.
           data:     (byte) The extended data array of 14 bytes.
+          max_hops: (int) The maximum number of hops for this message this is
+                    best set using the device hop_distance value
 
         Returns:
           Returns the created OutStandard message.
         """
-        flags = Flags(Flags.Type.DIRECT, is_ext=True)
+        flags = Flags(Flags.Type.DIRECT, is_ext=True, max_hops=max_hops)
         return OutExtended(to_addr, flags, cmd1, cmd2, data)
 
     #-----------------------------------------------------------------------

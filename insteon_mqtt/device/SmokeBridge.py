@@ -124,7 +124,8 @@ class SmokeBridge(Base):
         # request the all link database delta so get that.  See smoke
         # bridge dev guide p25.  See the Base.refresh() comments for
         # more details.
-        msg = Msg.OutStandard.direct(self.addr, 0x1f, 0x01)
+        msg = Msg.OutStandard.direct(self.addr, 0x1f, 0x01,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.DeviceRefresh(self, self.handle_refresh, force,
                                             on_done, num_retry=3)
         self.protocol.send(msg, msg_handler)

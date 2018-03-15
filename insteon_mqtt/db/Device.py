@@ -322,7 +322,8 @@ class Device:
         # the entry in place w/ the new db flags which say this record is no
         # longer in use.
         ext_data = new_entry.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, new_entry, on_done)
 
         # Send the message.
@@ -524,7 +525,8 @@ class Device:
         # Build the extended db modification message.  This says to update
         # the record at the entry memory location.
         ext_data = entry.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, entry, on_done)
 
         # Send the message and handler.
@@ -557,7 +559,8 @@ class Device:
         # Start by writing the last record - that way if it fails, we don't
         # try and update w/ the new data record.
         ext_data = last.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, last)
         seq.add_msg(msg, msg_handler)
 
@@ -568,7 +571,8 @@ class Device:
 
         # Add the call to update the data record.
         ext_data = entry.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, entry)
         seq.add_msg(msg, msg_handler)
 

@@ -102,7 +102,8 @@ class FanLinc(Dimmer):
         # let the dimmer refresh handler above take care of getting the
         # database updated.  Otherwise this handler and the one created in
         # the dimmer refresh would download the database twice.
-        msg = Msg.OutStandard.direct(self.addr, 0x19, 0x03)
+        msg = Msg.OutStandard.direct(self.addr, 0x19, 0x03,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.DeviceRefresh(self, self.handle_fan_refresh,
                                             force=False, num_retry=3,
                                             skip_db=True)
@@ -131,7 +132,8 @@ class FanLinc(Dimmer):
         # developers guide.
         cmd1 = 0x11
         data = bytes([0x02] + [0x00] * 13)
-        msg = Msg.OutExtended.direct(self.addr, cmd1, int(speed), data)
+        msg = Msg.OutExtended.direct(self.addr, cmd1, int(speed), data,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
@@ -157,7 +159,8 @@ class FanLinc(Dimmer):
         # developers guide.
         cmd1 = 0x13
         data = bytes([0x02] + [0x00] * 13)
-        msg = Msg.OutExtended.direct(self.addr, cmd1, 0x00, data)
+        msg = Msg.OutExtended.direct(self.addr, cmd1, 0x00, data,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
