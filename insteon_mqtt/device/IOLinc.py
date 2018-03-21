@@ -271,7 +271,8 @@ class IOLinc(Base):
         # database delta field.  The handler checks that against the
         # current value.  If it's different, it will send a database
         # download command to the device to update the database.
-        msg = Msg.OutStandard.direct(self.addr, 0x20, bits)
+        msg = Msg.OutStandard.direct(self.addr, 0x20, bits,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.StandardCmd(msg, self.handle_flags)
         self.protocol.send(msg, msg_handler)
 
@@ -299,7 +300,8 @@ class IOLinc(Base):
         # database delta field.  The handler checks that against the
         # current value.  If it's different, it will send a database
         # download command to the device to update the database.
-        msg = Msg.OutStandard.direct(self.addr, 0x19, 0x01)
+        msg = Msg.OutStandard.direct(self.addr, 0x19, 0x01,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.DeviceRefresh(self, self.handle_refresh, force,
                                             on_done, num_retry=3)
         self.protocol.send(msg, msg_handler)
@@ -324,7 +326,8 @@ class IOLinc(Base):
 
         # Send an on command.  Use the standard command handler which will
         # notify us when the command is ACK'ed.
-        msg = Msg.OutStandard.direct(self.addr, 0x11, 0xff)
+        msg = Msg.OutStandard.direct(self.addr, 0x11, 0xff,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.StandardCmd(msg, self.handle_ack, on_done)
 
         # Send the message to the PLM modem.
@@ -346,7 +349,8 @@ class IOLinc(Base):
 
         # Send an off command.  Use the standard command handler which will
         # notify us when the command is ACK'ed.
-        msg = Msg.OutStandard.direct(self.addr, 0x13, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, 0x13, 0x00,
+                                     max_hops=self.hop_distance())
         msg_handler = handler.StandardCmd(msg, self.handle_ack, on_done)
 
         # Send the message to the PLM modem.

@@ -125,7 +125,8 @@ class DeviceRefresh(Base):
                     scan_manager.start_scan()
                 else:
                     db_msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00,
-                                                    bytes(14))
+                                                    bytes(14),
+                                                    max_hops=self.device.hop_distance())
                     msg_handler = DeviceDbGet(self.device.db, on_done,
                                               num_retry=3)
                     protocol.send(db_msg, msg_handler)

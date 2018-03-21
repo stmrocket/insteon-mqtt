@@ -37,6 +37,9 @@ class Modem:
         """
         self.protocol = protocol
 
+        # Set the protocol modem object as ourself
+        self.protocol.modem = self
+
         self.addr = None
         self.name = "modem"
         self.label = self.name

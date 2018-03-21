@@ -39,12 +39,13 @@ class Device:
     """
 
     @staticmethod
-    def from_json(data, path):
+    def from_json(device, data, path):
         """Read a Device database from a JSON input.
 
         The inverse of this is to_json().
 
         Args:
+          device: (Device) The Insteon device object.
           data:   (dict) The data to read from.
           path:   (str) The file to save the database to when changes are
                   made.
@@ -53,7 +54,7 @@ class Device:
           Device: Returns the created Device object.
         """
         # Create the basic database object.
-        obj = Device(Address(data['address']), path)
+        obj = Device(device, path)
 
         for d in data['used']:
             obj.add_entry(DeviceEntry.from_json(d), save=False)
@@ -76,16 +77,16 @@ class Device:
         return obj
 
     #-----------------------------------------------------------------------
-    def __init__(self, addr, path=None):
+    def __init__(self, device, path=None):
         """Constructor
 
         Args:
-          addr:  (Address) The Insteon address of the device the database
-                 is for.
+          device:(Device) The Insteon device the database is for.
           path:  (str) The file to save the database to when changes are
                  made.
         """
-        self.addr = addr
+        self.device = device
+        self.addr = device.addr
         self.save_path = path
 
         # All link delta number.  This is incremented by the device when the
@@ -321,7 +322,8 @@ class Device:
         # the entry in place w/ the new db flags which say this record is no
         # longer in use.
         ext_data = new_entry.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, new_entry, on_done)
 
         # Send the message.
@@ -523,7 +525,8 @@ class Device:
         # Build the extended db modification message.  This says to update
         # the record at the entry memory location.
         ext_data = entry.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, entry, on_done)
 
         # Send the message and handler.
@@ -556,7 +559,8 @@ class Device:
         # Start by writing the last record - that way if it fails, we don't
         # try and update w/ the new data record.
         ext_data = last.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, last)
         seq.add_msg(msg, msg_handler)
 
@@ -567,7 +571,8 @@ class Device:
 
         # Add the call to update the data record.
         ext_data = entry.to_bytes()
-        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2f, 0x00, ext_data,
+                                     max_hops=self.device.hop_distance())
         msg_handler = handler.DeviceDbModify(self, entry)
         seq.add_msg(msg, msg_handler)
 

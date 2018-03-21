@@ -156,7 +156,8 @@ class Dimmer(Base):
 
         # Send an on or instant on command.
         cmd1 = 0x11 if not instant else 0x21
-        msg = Msg.OutStandard.direct(self.addr, cmd1, level)
+        msg = Msg.OutStandard.direct(self.addr, cmd1, level,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
@@ -182,7 +183,8 @@ class Dimmer(Base):
 
         # Send an off or instant off command.
         cmd1 = 0x13 if not instant else 0x21
-        msg = Msg.OutStandard.direct(self.addr, cmd1, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, cmd1, 0x00,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
@@ -232,7 +234,8 @@ class Dimmer(Base):
             0x01,   # D5 = cmd2 to send
             0x00,   # D6 = use ramp rate in scene db
             ] + [0x00] * 8)
-        msg = Msg.OutExtended.direct(self.addr, 0x30, 0x00, data)
+        msg = Msg.OutExtended.direct(self.addr, 0x30, 0x00, data,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
@@ -263,7 +266,8 @@ class Dimmer(Base):
         """
         LOG.info("Dimmer %s cmd: increment up", self.addr)
 
-        msg = Msg.OutStandard.direct(self.addr, 0x15, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, 0x15, 0x00,
+                                     max_hops=self.hop_distance())
 
         callback = functools.partial(self.handle_increment, delta=+8)
         msg_handler = handler.StandardCmd(msg, callback, on_done)
@@ -281,7 +285,8 @@ class Dimmer(Base):
         """
         LOG.info("Dimmer %s cmd: increment down", self.addr)
 
-        msg = Msg.OutStandard.direct(self.addr, 0x16, 0x00)
+        msg = Msg.OutStandard.direct(self.addr, 0x16, 0x00,
+                                     max_hops=self.hop_distance())
 
         callback = functools.partial(self.handle_increment, delta=-8)
         msg_handler = handler.StandardCmd(msg, callback, on_done)
@@ -305,7 +310,8 @@ class Dimmer(Base):
             level,  # D3 brightness level
             ] + [0x00] * 11)
 
-        msg = Msg.OutExtended.direct(self.addr, 0x2e, 0x00, data)
+        msg = Msg.OutExtended.direct(self.addr, 0x2e, 0x00, data,
+                                     max_hops=self.hop_distance())
 
         # Use the standard command handler which will notify us when
         # the command is ACK'ed.
