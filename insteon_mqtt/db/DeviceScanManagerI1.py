@@ -44,8 +44,6 @@ class DeviceScanManagerI1:
         Args
           protocol:  (Protocol) The Insteon Protocol object
           device_db: (db.Device) The device database being retrieved.
-          force:     (bool) If True, force a db download.  If False, only
-                     download the db if it's out of date.
           on_done:   Finished callback.  Will be called when the scan
                      operation is done.
           num_retry: (int) The number of times to retry the message if the
@@ -100,9 +98,10 @@ class DeviceScanManagerI1:
         if msg.cmd2 == self.msb:
             LOG.info("%s device ACK Set MSB: %02x", msg.from_addr,
                      self.msb)
+            hops = self.db.device.hop_distance()
             db_msg = Msg.OutStandard.direct(self.db.addr, 0x2B,
                                             self.lsb,
-                                            max_hops=self.db.device.hop_distance())
+                                            max_hops=hops)
             msg_handler = handler.StandardCmd(db_msg,
                                               self.handle_get_lsb,
                                               on_done=on_done,
@@ -167,9 +166,10 @@ class DeviceScanManagerI1:
             self._set_msb(self.msb, on_done)
         else:
             # Request the next LSB
+            hops = self.db.device.hop_distance()
             db_msg = Msg.OutStandard.direct(self.db.addr, 0x2B,
                                             self.lsb,
-                                            max_hops=self.db.device.hop_distance())
+                                            max_hops=hops)
             msg_handler = handler.StandardCmd(db_msg,
                                               self.handle_get_lsb,
                                               on_done=on_done,
