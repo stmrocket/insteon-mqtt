@@ -12,6 +12,7 @@ from .. import catalog
 from ..CommandSeq import CommandSeq
 from .. import handler
 from .DeviceEntry import DeviceEntry
+from .DbDiff import DbDiff
 from .. import log
 from .. import message as Msg
 from .. import util
@@ -515,6 +516,78 @@ class Device:
         return results
 
     #-----------------------------------------------------------------------
+    def diff(self, rhs):
+        """Compare this database with another Device database.
+
+        It's an error (logged and will return None) to use this on databases
+        for difference addresses.  The purpose of this method is to compare
+        two database for the same device and generate a list of commands that
+        will cause the input rhs database to be equal to the self database.
+
+        The return value is a db.DbDiff object that contains the
+        additions and deletions needed to update rhs to match self.
+
+        Args:
+           rhs:   (Device) The other device database to compare with.
+
+        Returns:
+           Returns the list changes needed in rhs to make it equal to this
+           object.
+        """
+        if self.addr != rhs.addr and self.engine == rhs.self.engine:
+            LOG.error("Error trying to compare device databases for %s vs"
+                      " %s.  Only the same device can be differenced.",
+                      self.addr, rhs.addr)
+            return None
+
+        # Copy the rhs entry dict of mem_loc->DeviceEntry.  For each match
+        # that we find, we'll remove that address from the dict.  The result
+        # will be the entries that need to be removed from rhs to make it
+        # match.
+        rhsRemove = {k : v for k, v in rhs.entries.items()}
+
+        delta = DbDiff(self.addr)
+        for _addr, entry in enumerate(self.entries):
+            rhsEntry = rhs.find(entry.addr, entry.group, entry.is_controller)
+
+            # RHS is missing this entry or has different data bytes we need
+            # to update.
+            if rhsEntry is None or not entry.identical(rhsEntry):
+                delta.add(entry)
+
+            # Otherwise this is match so we can note that by removing this
+            # address from the set.
+            elif rhsEntry:
+                del rhsRemove[rhsEntry.mem_loc]
+
+        # Add in remaining rhs entries that where not matches as entries that
+        # need to be removed.
+        for entry in rhsRemove.values():
+            delta.remove(entry)
+
+        return delta
+
+    #-----------------------------------------------------------------------
+    def apply_diff(self, device, diff, on_done=None):
+        """TODO: doc
+        """
+        assert self.addr == diff.addr
+
+        seq = CommandSeq(device, "Device database sync complete", on_done)
+
+        # Start by removing all the entries we don't need.  This way we free
+        # up memory locations to use for the add.
+        for entry in diff.del_entries:
+            seq.add(self.delete_on_device, entry)
+
+        # Add the missing entries.
+        for entry in diff.add_entries:
+            seq.add(self.add_on_device, device, entry.addr, entry.group,
+                    entry.is_controller, entry.data)
+
+        seq.run()
+
+    #-----------------------------------------------------------------------
     def to_json(self):
         """Convert the database to JSON format.
 
@@ -618,6 +691,30 @@ class Device:
         # Save the updated database.
         if save:
             self.save()
+
+    #-----------------------------------------------------------------------
+    def add_from_config(self, addr, group, is_controller, data):
+        """Add an entry to the config database from the config file.
+
+        Is called by _load_scenes() on the modem.  Adds an entry to the next
+        available mem_loc from an entry specified in the config file.  This
+        should only be used to add an entry to a db_config database, which is
+        then compared with the actual database using diff().
+
+        Args:
+          TODO
+        """
+        # Get the mem_loc and move last entry down 1 position
+        mem_loc = self.last.mem_loc
+        self.last.mem_loc -= 0x08
+
+        # Generate the entry
+        db_flags = Msg.DbFlags(in_use=True, is_controller=is_controller,
+                               is_last_rec=False)
+        entry = DeviceEntry(addr, group, mem_loc, db_flags, data)
+
+        # Add the Entry to the DB
+        self.add_entry(entry, save=False)
 
     #-----------------------------------------------------------------------
     def _add_using_unused(self, device, addr, group, is_controller, data,
