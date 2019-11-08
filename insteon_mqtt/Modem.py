@@ -48,6 +48,9 @@ class Modem:
         self.device_names = {}
         self.db = db.Modem()
 
+        # Prepare the config db
+        self.db_config = db.Modem()
+
         # Signal to emit when a new device is added.
         self.signal_new_device = Signal()  # emit(modem, device)
 
@@ -798,16 +801,19 @@ class Modem:
         Args:
           config (object):   Configuration object.
         """
+        # First fix any Modem Controllers that lack a proper group
+        self._assign_modem_group(config)
+
         data = config.data['insteon'].get('scenes', [])
         for scene in data:
             controllers = []
             responders = []
 
-            # Gather controllers list
+            # Gather controllers list and convert to objects
             for item in scene['controllers']:
                 controllers.append(self._parse_scene_device(item))
 
-            # Gather responders list
+            # Gather responders list and convert to objects
             for item in scene['responders']:
                 responders.append(self._parse_scene_device(item))
 
@@ -877,11 +883,58 @@ class Modem:
                 ret['group'] = data[ret['device_str']]
             else:
                 # This is a dict just update the return
-                ret.update(ret['device_str'])
+                ret.update(data)
         # Try and find this device
         ret['device'] = self.find(ret['device_str'])
         return ret
 
+    #-----------------------------------------------------------------------
+    def _assign_modem_group(self, config):
+        """Assigns modem group numbers to modem controller scene definitions
+        that lack them
+
+        All modem controller instances require a modem scene which requires a
+        group number. The modem groups 0x00 and 0x01 are reserved and cannot be
+        used as scenes.
+
+        If modem controller entries are found in the defined scenes that
+        lack proper group numbers, this function will select the next
+        available group number starting from 0x03 and counting up and assign
+        it to this modem scene.  This directly modifies the config object and
+        saves it to disk if changes are made.
+
+        Args:
+          config (object):   Configuration object.
+        """
+        config_scenes = config.data['insteon'].get('scenes', [])
+        updated = False
+        for scene_i in range(len(config_scenes)):
+            for def_i in range(len(config_scenes[scene_i]['controllers'])):
+                definition = config_scenes[scene_i]['controllers'][def_i]
+                controller = self._parse_scene_device(definition)
+                if (controller['device'].type() == "Modem"
+                        and controller['group'] <= 0x01):
+                    updated = True
+
+                    # Get next available group id
+                    group = self.db.next_group()
+
+                    # Put group id into definitions, matching user format
+                    if isinstance(definition, dict):
+                        device_str = next(iter(definition))
+                        if isinstance(definition[device_str], int):
+                            # Format 1 = modem: group
+                            config_scenes[scene_i]['controllers'][def_i][device_str] = group
+                        else:
+                            # Format 2 = modem: {'group': group}
+                            config_scenes[scene_i]['controllers'][def_i][device_str]['group'] = group
+                    else:
+                        # Format 3 = modem
+                        config_scenes[scene_i]['controllers'][def_i] = {'modem': group}
+        # All done save the config file if necessary
+        if updated:
+            config.data['insteon']['scenes'] = config_scenes
+            config.save()
 
     #-----------------------------------------------------------------------
     def _db_update(self, local_group, is_controller, remote_addr, remote_group,
